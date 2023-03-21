@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FEUR</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .audessus {
+            position: absolute;
+            left: 35%;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.5);
+            bottom: 10px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            width: 30%;
+        }
+        @media screen and (max-width: 600px) {
+            .audessus {
+                width: 100%;
+                left: 0;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="https://www.marrantmaispastrop.fun/feur/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="manifest" href="https://www.marrantmaispastrop.fun/feur/manifest.json">
+</head>
+<body>
+<div class="audessus row">
+    <div class="col-lg-6">
+        <label for="YRotate" class="form-label">Rotation Y</label>
+        <input type="range" class="form-range" id="YRotate" min="-15" max="15" value="1">
+        <label for="XRotate" class="form-label">Rotation X</label>
+        <input type="range" class="form-range" id="XRotate" min="-15" max="15" value="1">
+        <label for="ZRotate" class="form-label">Rotation Z</label>
+        <input type="range" class="form-range" id="ZRotate" min="-15" max="15" value="1">
+    </div>
+    <div class="col-lg-6">
+        <input class="form-check-input" type="checkbox" value="" id="safemode" checked>
+        <label class="form-check-label" for="safemode">
+            Safe Mode
+        </label>
+        <label for="ColorSwitch" class="form-label">Changement des couleurs</label>
+        <input type="range" class="form-range" id="ColorSwitch" min="0" max="100" >
+    </div>
+
+</div>
+
+
+<script>
+    // lance https://www.marrantmaispastrop.fun/feur/zik.mp3 a la seconde 22 quand le safemode est disable
+    var audio = new Audio('https://www.marrantmaispastrop.fun/feur/zik.mp3');
+    var xvaluenormal = 0;
+    var yvaluenormal = 0;
+    var normalColor = 0
+    document.getElementById("safemode").addEventListener("change", function () {
+        if (!document.getElementById("safemode").checked) {
+            audio.play();
+            xvaluenormal = document.getElementById("XRotate").value;
+            yvaluenormal = document.getElementById("YRotate").value;
+            normalColor = document.getElementById("ColorSwitch").value;
+            document.getElementById("XRotate").value = 15;
+            document.getElementById("YRotate").value = 15;
+            document.getElementById("ColorSwitch").value = 100;
+        }
+        else {
+            audio.pause();
+            document.getElementById("XRotate").value = xvaluenormal;
+            document.getElementById("YRotate").value = yvaluenormal;
+            document.getElementById("ColorSwitch").value = normalColor;
+        }
+    });
+</script>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Initialisation de Three.js
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Création du texte "FEUR"
+    const loader = new THREE.FontLoader();
+    loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+        // Création de la géométrie du texte
+        const geometry = new THREE.TextGeometry('F E U R', {
+            font: font,
+            size: 80,
+            height: 20,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 10,
+            bevelSize: 8,
+            bevelOffset: 0,
+            bevelSegments: 5
+        });
+
+        geometry.computeBoundingBox();
+        const textWidth = geometry.boundingBox.max.x - geometry.boundingBox.min.x;
+
+        // Création du matériau et du maillage du texte
+        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const text = new THREE.Mesh(geometry, material);
+
+        text.position.x = -0.5 * textWidth;
+
+        // Création d'un conteneur pour le texte et ajustement de sa position
+        const textContainer = new THREE.Group();
+        textContainer.position.set(0, 0, -500);
+        textContainer.add(text);
+
+        // Ajout du conteneur à la scène
+        scene.add(textContainer);
+
+        // Ajout de la lumière
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1).normalize();
+        scene.add(light);
+
+        // Animation de la scène
+        const animate = function () {
+            requestAnimationFrame(animate);
+
+            // Rotation du conteneur du texte en fonction des glisseurs
+            textContainer.rotation.y += document.getElementById("YRotate").value / 30;
+            textContainer.rotation.x += document.getElementById("XRotate").value / 30;
+            textContainer.rotation.z += document.getElementById("ZRotate").value / 30;
+
+
+            //changement de couleur 1 frame sur 5
+            if (Math.random() < document.getElementById("ColorSwitch").value / 100)
+            text.material.color.setHex(Math.random() * 0xffffff);
+
+
+            //clignote l'arriere plan
+            if (document.getElementById("safemode").checked)
+                renderer.setClearColor(0x000000, 1);
+            else
+                renderer.setClearColor(Math.random() * 0xffffff, 1);
+
+
+            renderer.render(scene, camera);
+        };
+        animate();
+    });
+
+</script>
+
+</body>
+</html>
